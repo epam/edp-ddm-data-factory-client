@@ -1,0 +1,5 @@
+registry-rest-api:
+  url: http://localhost:8777
+
+platform-gateway:
+  url: http://localhost:9779
