@@ -1,2 +1,2 @@
-user-settings-service-api:
+user-settings-service:
   url: http://localhost:8778

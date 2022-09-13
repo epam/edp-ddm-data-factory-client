@@ -17,15 +17,15 @@
 package com.epam.digital.data.platform.datafactory.settings.client;
 
 import com.epam.digital.data.platform.datafactory.settings.config.UserSettingsFeignDecoderConfiguration;
+import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.epam.digital.data.platform.settings.model.dto.SettingsReadDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateOutputDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
@@ -35,7 +35,7 @@ import java.util.UUID;
  * The interface represents a feign client and used to perform operations in user settings service.
  */
 @FeignClient(name = "user-settings-client",
-        url = "${user-settings-service-api.url}/settings",
+        url = "${user-settings-service.url}/api/settings",
         configuration = UserSettingsFeignDecoderConfiguration.class)
 public interface UserSettingsFeignClient {
 
@@ -46,29 +46,51 @@ public interface UserSettingsFeignClient {
    * @return mapped user-settings response
    * @see SettingsReadDto
    */
-  @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
   SettingsReadDto performGet(@RequestHeader HttpHeaders headers);
 
   /**
-   * Perform PUT operation for updating user settings
+   * Perform GET operation for getting user settings by user id
    *
-   * @param body    request body
-   * @param headers http headers
-   * @return mapped user-settings response
-   * @see SettingsUpdateOutputDto
-   */
-  @PutMapping(produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-  SettingsUpdateOutputDto performPut(@RequestBody SettingsUpdateInputDto body, @RequestHeader HttpHeaders headers);
-
-  /**
-   * Perform GET operation for getting user settings by keycloak id
-   *
-   * @param keycloakId identifier from keycloak
+   * @param userId identifier from keycloak
    * @param headers http headers
    * @return mapped user-settings response
    * @see SettingsReadDto
    */
-  @GetMapping(path = "/{keycloakId}", produces = MediaType.APPLICATION_JSON_VALUE)
-  SettingsReadDto performGetByKeycloakId(
-      @PathVariable("keycloakId") UUID keycloakId, @RequestHeader HttpHeaders headers);
+  @GetMapping(path = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
+  SettingsReadDto performGetByUserId(
+      @PathVariable("userId") UUID userId, @RequestHeader HttpHeaders headers);
+
+  /**
+   * Perform POST operation for activating email channel for user
+   *
+   * @param input request body
+   * @param headers http headers
+   * @see SettingsEmailInputDto
+   */
+  @PostMapping("/me/channels/email/activate")
+  void activateEmailChannel(
+      @RequestBody SettingsEmailInputDto input, @RequestHeader HttpHeaders headers);
+
+  /**
+   * Perform POST operation for activating diia channel for user
+   *
+   * @param headers http headers
+   */
+  @PostMapping("/me/channels/diia/activate")
+  void activateDiiaChannel(@RequestHeader HttpHeaders headers);
+
+  /**
+   * Perform POST operation for deactivating channel for user
+   *
+   * @param channel channel to deactivate
+   * @param input request body
+   * @param headers http headers
+   * @see SettingsDeactivateChannelInputDto
+   */
+  @PostMapping("/me/channels/{channel}/deactivate")
+  void deactivateChannel(
+      @PathVariable("channel") String channel,
+      @RequestBody SettingsDeactivateChannelInputDto input,
+      @RequestHeader HttpHeaders headers);
 }
