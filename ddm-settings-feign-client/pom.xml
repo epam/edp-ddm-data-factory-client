@@ -7,7 +7,7 @@
   <parent>
     <artifactId>ddm-data-factory-client</artifactId>
     <groupId>com.epam.digital.data.platform</groupId>
-    <version>1.6.0</version>
+    <version>1.8.0</version>
   </parent>
 
   <artifactId>ddm-settings-feign-client</artifactId>
@@ -15,7 +15,7 @@
   <name>ddm-settings-feign-client</name>
 
   <properties>
-    <settings.model.version>1.6.0.1</settings.model.version>
+    <settings.model.version>1.8.0.1</settings.model.version>
     <sonar.coverage.exclusions>
       **/digital/data/platform/datafactory/feign/config/**/*
     </sonar.coverage.exclusions>

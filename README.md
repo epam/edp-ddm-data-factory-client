@@ -35,7 +35,7 @@ Or any dependency from inner modules
 registry-rest-api:
   url: data factory base url
 
-user-settings-service-api:
+user-settings-service:
   url: user settings base url
 
 excerpt-service-api:

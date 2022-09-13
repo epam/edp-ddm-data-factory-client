@@ -18,10 +18,11 @@ package com.epam.digital.data.platform.datafactory.settings.it.client;
 
 import com.epam.digital.data.platform.datafactory.settings.client.UserSettingsFeignClient;
 import com.epam.digital.data.platform.datafactory.settings.it.builder.StubRequest;
-import com.epam.digital.data.platform.settings.model.dto.SettingsUpdateInputDto;
-import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.epam.digital.data.platform.settings.model.dto.Channel;
+import com.epam.digital.data.platform.settings.model.dto.SettingsDeactivateChannelInputDto;
+import com.epam.digital.data.platform.settings.model.dto.SettingsEmailInputDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.matching.EqualToJsonPattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -31,9 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class UserSettingsFeignClientIT extends BaseIT {
 
@@ -43,14 +43,15 @@ class UserSettingsFeignClientIT extends BaseIT {
   private ObjectMapper objectMapper;
 
   @Test
-  void shouldPerformGet() {
-    var responseBody = "{\"settings_id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"}";
+  void shouldPerformGetFromToken() {
+    var responseBody =
+        "{\"settingsId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"channels\":[{\"channel\":\"diia\",\"activated\":false}]}";
     var headers = new HttpHeaders();
     headers.add("Content-Type", "application/json");
     headers.add("X-Access-Token", "token");
 
     mockUserSettingsFeignClient(StubRequest.builder()
-        .path("/settings")
+        .path("/api/settings/me")
         .method(HttpMethod.GET)
         .requestHeaders(headers)
         .status(200)
@@ -62,18 +63,22 @@ class UserSettingsFeignClientIT extends BaseIT {
 
     assertThat(response).isNotNull();
     assertThat(response.getSettingsId()).hasToString("3fa85f64-5717-4562-b3fc-2c963f66afa6");
+    assertThat(response.getChannels()).hasSize(1);
+    assertThat(response.getChannels().get(0).getChannel()).isEqualTo(Channel.DIIA);
+    assertThat(response.getChannels().get(0).isActivated()).isFalse();
   }
 
   @Test
-  void shouldPerformGetByKeycloakId() {
+  void shouldPerformGetByUserId() {
     var keycloakId = "c2c19401-f1b7-4954-a230-ab15566e7318";
-    var responseBody = "{\"settings_id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"}";
+    var responseBody =
+        "{\"settingsId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\"channels\":[{\"channel\":\"diia\",\"activated\":false}]}";
     var headers = new HttpHeaders();
     headers.add("Content-Type", "application/json");
     headers.add("X-Access-Token", "token");
 
     mockUserSettingsFeignClient(StubRequest.builder()
-            .path(String.format("/settings/%s", keycloakId))
+            .path(String.format("/api/settings/%s", keycloakId))
             .method(HttpMethod.GET)
             .requestHeaders(headers)
             .status(200)
@@ -82,59 +87,71 @@ class UserSettingsFeignClientIT extends BaseIT {
             .build());
 
     var response =
-        userSettingsFeignClient.performGetByKeycloakId(UUID.fromString(keycloakId), headers);
+        userSettingsFeignClient.performGetByUserId(UUID.fromString(keycloakId), headers);
 
     assertThat(response).isNotNull();
     assertThat(response.getSettingsId()).hasToString("3fa85f64-5717-4562-b3fc-2c963f66afa6");
+    assertThat(response.getChannels()).hasSize(1);
+    assertThat(response.getChannels().get(0).getChannel()).isEqualTo(Channel.DIIA);
+    assertThat(response.getChannels().get(0).isActivated()).isFalse();
   }
 
   @Test
-  void shouldPerformPut() throws JsonProcessingException {
-    var requestBody = new SettingsUpdateInputDto();
-    requestBody.setPhone("string");
-    var responseBody = "{ \"settings_id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"}";
+  void shouldMatchRequestPerformActivateEmail() {
+    var requestBody = new SettingsEmailInputDto();
+    requestBody.setAddress("email@email.com");
+    var requestBodyJson = "{\"address\":\"email@email.com\"}";
     var headers = new HttpHeaders();
     headers.add("Content-Type", "application/json");
     headers.add("X-Access-Token", "token");
 
     mockUserSettingsFeignClient(StubRequest.builder()
-        .path("/settings")
-        .method(HttpMethod.PUT)
-        .requestHeaders(headers)
-        .requestBody(equalTo(objectMapper.writeValueAsString(requestBody)))
-        .status(200)
-        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
-        .responseBody(responseBody)
-        .build());
+            .path("/api/settings/me/channels/email/activate")
+            .method(HttpMethod.POST)
+            .requestHeaders(headers)
+            .requestBody(new EqualToJsonPattern(requestBodyJson, true, false))
+            .status(200)
+            .build());
 
-    var response = userSettingsFeignClient.performPut(requestBody, headers);
-
-    assertThat(response).isNotNull();
-    assertThat(response.getSettingsId().toString())
-        .isEqualTo("3fa85f64-5717-4562-b3fc-2c963f66afa6");
+    assertDoesNotThrow(() -> userSettingsFeignClient.activateEmailChannel(requestBody, headers));
   }
 
   @Test
-  void shouldThrowValidationExceptionWhenPerformPut() throws JsonProcessingException {
-    var requestBody = new SettingsUpdateInputDto();
+  void shouldMatchRequestPerformActivateDiia() {
     var headers = new HttpHeaders();
     headers.add("Content-Type", "application/json");
     headers.add("X-Access-Token", "token");
 
     mockUserSettingsFeignClient(StubRequest.builder()
-        .path("/settings")
-        .method(HttpMethod.PUT)
-        .requestHeaders(headers)
-        .requestBody(equalTo(objectMapper.writeValueAsString(requestBody)))
-        .status(422)
-        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
-        .responseBody("{\"traceId\":\"traceId1\",\"code\":\"Validation failed\"}")
-        .build());
+            .path("/api/settings/me/channels/diia/activate")
+            .method(HttpMethod.POST)
+            .requestHeaders(headers)
+            .status(200)
+            .build());
 
-    var ex = assertThrows(ValidationException.class,
-        () -> userSettingsFeignClient.performPut(requestBody, headers));
+    assertDoesNotThrow(() -> userSettingsFeignClient.activateDiiaChannel(headers));
+  }
 
-    assertThat(ex).isNotNull();
-    assertThat(ex.getCode()).isEqualTo("Validation failed");
+  @Test
+  void shouldMatchRequestPerformDeactivateEmail() {
+    var requestBody = new SettingsDeactivateChannelInputDto();
+    requestBody.setDeactivationReason("User deactivated");
+    var requestBodyJson = "{\"deactivationReason\":\"User deactivated\"}";
+    var headers = new HttpHeaders();
+    headers.add("Content-Type", "application/json");
+    headers.add("X-Access-Token", "token");
+
+    mockUserSettingsFeignClient(StubRequest.builder()
+            .path("/api/settings/me/channels/email/deactivate")
+            .method(HttpMethod.POST)
+            .requestHeaders(headers)
+            .requestBody(new EqualToJsonPattern(requestBodyJson, true, false))
+            .status(200)
+            .build());
+
+    assertDoesNotThrow(
+        () ->
+            userSettingsFeignClient.deactivateChannel(
+                Channel.EMAIL.getValue(), requestBody, headers));
   }
 }

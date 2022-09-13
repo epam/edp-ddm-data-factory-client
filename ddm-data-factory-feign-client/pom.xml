@@ -7,7 +7,7 @@
   <parent>
     <artifactId>ddm-data-factory-client</artifactId>
     <groupId>com.epam.digital.data.platform</groupId>
-    <version>1.6.0</version>
+    <version>1.8.0</version>
   </parent>
 
   <artifactId>ddm-data-factory-feign-client</artifactId>
