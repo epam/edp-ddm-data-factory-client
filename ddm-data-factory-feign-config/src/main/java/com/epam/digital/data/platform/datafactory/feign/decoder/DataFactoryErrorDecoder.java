@@ -21,6 +21,7 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.ErrorDetailDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ErrorsListDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
+import com.epam.digital.data.platform.starter.errorhandling.exception.ForbiddenOperationException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.SystemException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
@@ -57,6 +58,9 @@ public class DataFactoryErrorDecoder implements ErrorDecoder {
     if (response.status() == HttpStatus.SERVICE_UNAVAILABLE.value()){
       return serviceUnavailable(response);
     }
+    if (response.status() == HttpStatus.FORBIDDEN.value()) {
+      return forbiddenException(response);
+    }
     else {
       return systemException(response);
     }
@@ -72,6 +76,18 @@ public class DataFactoryErrorDecoder implements ErrorDecoder {
 
     systemErrorDto.setLocalizedMessage(localizedMessage);
     return new SystemException(systemErrorDto);
+  }
+
+  @SneakyThrows
+  private ForbiddenOperationException forbiddenException(Response response) {
+    var systemErrorDto = objectMapper
+            .readValue(response.body().asInputStream(), SystemErrorDto.class);
+
+    var dataFactoryError = DataFactoryError.fromNameOrDefaultRuntimeError(systemErrorDto.getCode());
+    var localizedMessage = messageResolver.getMessage(dataFactoryError.getTitleKey());
+
+    systemErrorDto.setLocalizedMessage(localizedMessage);
+    return new ForbiddenOperationException(systemErrorDto);
   }
 
   private SystemException serviceUnavailable(Response response) {

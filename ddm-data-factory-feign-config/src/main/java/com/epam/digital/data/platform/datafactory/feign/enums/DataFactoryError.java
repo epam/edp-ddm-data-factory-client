@@ -33,6 +33,7 @@ public enum DataFactoryError implements MessageTitle {
   HEADERS_ARE_MISSING("data-factory.error.header-are-missing"),
   INVALID_HEADER_VALUE("data-factory.error.invalid-header-value"),
   AUTHENTICATION_FAILED("data-factory.error.authentication-failed"),
+  FORBIDDEN("data-factory.error.forbidden-operation"),
   JWT_EXPIRED("data-factory.error.jwt-expired"),
   NOT_FOUND("data-factory.error.not-found"),
   CONSTRAINT_VIOLATION("data-factory.error.constraint-violation"),
