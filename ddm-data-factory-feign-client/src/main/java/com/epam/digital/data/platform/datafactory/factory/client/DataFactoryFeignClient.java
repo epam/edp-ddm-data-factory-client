@@ -128,4 +128,18 @@ public interface DataFactoryFeignClient {
   @GetMapping(path = "/{resource}", produces = MediaType.APPLICATION_JSON_VALUE)
   ConnectorResponse performSearch(@PathVariable("resource") String resource,
       @SpringQueryMap Map<String, String> params, @RequestHeader HttpHeaders headers);
+
+  /**
+   * Perform POST operation for creating list of data factory entities using one of predefined upload types
+   *
+   * @param resource url resource
+   * @param uploadType data upload type
+   * @param headers  http headers
+   * @return mapped response
+   * @see ConnectorResponse
+   */
+  @PostMapping(path = "/{resource}/{upload-type}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+  ConnectorResponse performPostBatch(@PathVariable("resource") String resource,
+      @PathVariable("upload-type") String uploadType,
+      @RequestBody String body, @RequestHeader HttpHeaders headers);
 }

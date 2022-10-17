@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.epam.digital.data.platform.datafactory.factory.builder.StubRequest;
+import com.epam.digital.data.platform.starter.errorhandling.exception.ConstraintViolationException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.SystemException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import java.util.List;
@@ -279,5 +280,56 @@ class DataFactoryFeignClientIT extends BaseIT {
     assertThat(exception).isNotNull();
     assertThat(exception.getCode()).isEqualTo("SERVICE_UNAVAILABLE");
     assertThat(exception.getLocalizedMessage()).isEqualTo("Сервіс недоступний");
+  }
+
+  @Test
+  void shouldPerformPostList() {
+    var resource = "testResource";
+    var uploadType = "list";
+    var expectedBody = "\"entities\":[{\"data\":\"test data\",\"description\":\"some description\"}]";
+    var headers = new HttpHeaders();
+    headers.add("Content-Type", "application/json");
+    headers.add("X-Access-Token", "token");
+
+    mockDataFactoryFeignClient(StubRequest.builder()
+        .path(String.format("/%s/%s", resource, uploadType))
+        .method(HttpMethod.POST)
+        .requestHeaders(headers)
+        .requestBody(equalTo(expectedBody))
+        .status(201)
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .build());
+
+    var response = dataFactoryFeignClient.performPostBatch(resource, uploadType, expectedBody, headers);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getResponseBody()).isNull();
+    assertThat(response.getStatusCode()).isEqualTo(201);
+  }
+
+  @Test
+  void shouldPerformConstraintViolationError() {
+    var resource = "testResource";
+    var id = "testId";
+    var expectedBody = "{\"code\": \"CONSTRAINT_VIOLATION\"}";
+    var headers = new HttpHeaders();
+    headers.add("Content-Type", "application/json");
+    headers.add("X-Access-Token", "token");
+
+    mockExceptionDataFactoryFeignClient(StubRequest.builder()
+        .path(String.format("/%s/%s", resource, id))
+        .method(HttpMethod.GET)
+        .requestHeaders(headers)
+        .status(409)
+        .responseHeaders(Map.of("Content-Type", List.of("application/json")))
+        .responseBody(expectedBody)
+        .build());
+
+    ConstraintViolationException exception = assertThrows(
+        ConstraintViolationException.class, () -> dataFactoryFeignClient.performGet(resource, id, headers));
+
+    assertThat(exception).isNotNull();
+    assertThat(exception.getCode()).isEqualTo("CONSTRAINT_VIOLATION");
+    assertThat(exception.getLocalizedMessage()).isEqualTo("Порушення одного з обмежень на рівні БД");
   }
 }
