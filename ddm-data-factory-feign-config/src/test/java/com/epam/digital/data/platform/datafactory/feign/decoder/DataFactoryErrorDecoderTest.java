@@ -39,6 +39,7 @@ import org.springframework.http.HttpStatus;
 import java.nio.charset.Charset;
 import java.util.Collections;
 
+import static com.epam.digital.data.platform.datafactory.feign.enums.DataFactoryError.CONSTRAINT_VIOLATION;
 import static com.epam.digital.data.platform.datafactory.feign.enums.DataFactoryError.JWT_EXPIRED;
 import static com.epam.digital.data.platform.datafactory.feign.enums.DataFactoryError.VALIDATION_ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -124,6 +125,21 @@ class DataFactoryErrorDecoderTest {
     assertThat(actualException.getLocalizedMessage()).isEqualTo(LOCALIZED_MESSAGE);
     assertThat(((SystemException)actualException).getCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.name());
   }
+
+  @Test
+  void expectConstraintViolationExceptionLocalizedIfConflict() throws JsonProcessingException {
+    var responseBodyStr = objectMapper
+        .writeValueAsBytes(SystemErrorDto.builder().code(CONSTRAINT_VIOLATION.name()).build());
+    var response = mockResponse(HttpStatus.CONFLICT, responseBodyStr);
+
+    when(messageResolver.getMessage("data-factory.error.constraint-violation"))
+        .thenReturn(LOCALIZED_MESSAGE);
+
+    var actualException = errorDecoder.decode("key", response);
+    assertThat(actualException).isInstanceOf(SystemException.class);
+    assertThat(actualException.getLocalizedMessage()).isEqualTo(LOCALIZED_MESSAGE);
+    assertThat(((SystemException)actualException).getCode()).isEqualTo(CONSTRAINT_VIOLATION.name());
+    }
 
   private Response mockResponse(HttpStatus status, byte[] body) {
     return Response.builder()
