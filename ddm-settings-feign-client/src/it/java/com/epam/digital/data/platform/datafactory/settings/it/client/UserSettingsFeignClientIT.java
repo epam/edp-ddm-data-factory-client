@@ -39,8 +39,6 @@ class UserSettingsFeignClientIT extends BaseIT {
 
   @Autowired
   private UserSettingsFeignClient userSettingsFeignClient;
-  @Autowired
-  private ObjectMapper objectMapper;
 
   @Test
   void shouldPerformGetFromToken() {
@@ -135,8 +133,9 @@ class UserSettingsFeignClientIT extends BaseIT {
   @Test
   void shouldMatchRequestPerformDeactivateEmail() {
     var requestBody = new SettingsDeactivateChannelInputDto();
+    requestBody.setAddress("address@email.com");
     requestBody.setDeactivationReason("User deactivated");
-    var requestBodyJson = "{\"deactivationReason\":\"User deactivated\"}";
+    var requestBodyJson = "{\"address\":\"address@email.com\",\"deactivationReason\":\"User deactivated\"}";
     var headers = new HttpHeaders();
     headers.add("Content-Type", "application/json");
     headers.add("X-Access-Token", "token");

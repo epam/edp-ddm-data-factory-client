@@ -15,7 +15,7 @@
   <name>ddm-settings-feign-client</name>
 
   <properties>
-    <settings.model.version>1.8.0.1</settings.model.version>
+    <settings.model.version>1.8.0.6</settings.model.version>
     <sonar.coverage.exclusions>
       **/digital/data/platform/datafactory/feign/config/**/*
     </sonar.coverage.exclusions>
