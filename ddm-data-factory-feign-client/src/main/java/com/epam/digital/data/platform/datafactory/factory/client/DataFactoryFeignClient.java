@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 EPAM Systems.
+ * Copyright 2023 EPAM Systems.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.epam.digital.data.platform.datafactory.feign.config.DataFactoryFeignD
 import com.epam.digital.data.platform.datafactory.feign.model.response.ConnectorResponse;
 import java.util.Map;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -117,17 +116,17 @@ public interface DataFactoryFeignClient {
       @PathVariable("id") String id, @RequestHeader HttpHeaders headers);
 
   /**
-   * Perform GET operation for searching data factory entities by query params
+   * Perform POST operation for searching data factory entities by query params
    *
    * @param resource url resource
-   * @param params   query search params
+   * @param params   request body search params
    * @param headers  http headers
    * @return mapped response
    * @see ConnectorResponse
    */
-  @GetMapping(path = "/{resource}", produces = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(path = "/{resource}", produces = MediaType.APPLICATION_JSON_VALUE)
   ConnectorResponse performSearch(@PathVariable("resource") String resource,
-      @SpringQueryMap Map<String, String> params, @RequestHeader HttpHeaders headers);
+      @RequestBody Map<String, Object> params, @RequestHeader HttpHeaders headers);
 
   /**
    * Perform POST operation for creating list of data factory entities using one of predefined upload types
