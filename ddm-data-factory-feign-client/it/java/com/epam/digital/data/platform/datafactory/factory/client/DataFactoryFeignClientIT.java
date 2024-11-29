@@ -166,7 +166,7 @@ class DataFactoryFeignClientIT extends BaseIT {
     var queryParams = Map.of("id", "testId", "name", "testName");
 
     mockDataFactoryFeignClient(StubRequest.builder()
-        .path(String.format("/%s", resource))
+        .path(String.format("/search/%s", resource))
         .method(HttpMethod.GET)
         .requestHeaders(headers)
         .queryParams(queryParams)

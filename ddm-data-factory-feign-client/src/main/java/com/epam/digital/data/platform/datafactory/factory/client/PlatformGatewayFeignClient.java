@@ -65,7 +65,7 @@ public interface PlatformGatewayFeignClient {
    *
    * @see ConnectorResponse
    */
-  @PostMapping(path = "/data-factory/{registryTarget}/{resource}",
+  @PostMapping(path = "/data-factory/{registryTarget}/search/{resource}",
       produces = MediaType.APPLICATION_JSON_VALUE)
   ConnectorResponse performSearch(@PathVariable("registryTarget") String registryTarget,
       @PathVariable("resource") String resource, @RequestBody Map<String, Object> params,

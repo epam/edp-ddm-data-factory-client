@@ -124,7 +124,7 @@ public interface DataFactoryFeignClient {
    * @return mapped response
    * @see ConnectorResponse
    */
-  @PostMapping(path = "/{resource}", produces = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(path = "/search/{resource}", produces = MediaType.APPLICATION_JSON_VALUE)
   ConnectorResponse performSearch(@PathVariable("resource") String resource,
       @RequestBody Map<String, Object> params, @RequestHeader HttpHeaders headers);
 

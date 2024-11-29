@@ -69,7 +69,7 @@ class PlatformGatewayFeignClientIT extends BaseIT {
     var queryParams = Map.of("id", "testId", "name", "testName");
 
     mockPlatformGatewayFeignClient(StubRequest.builder()
-        .path(String.format("/data-factory/%s/%s", targetRegistry, resource))
+        .path(String.format("/data-factory/%s/search/%s", targetRegistry, resource))
         .method(HttpMethod.GET)
         .requestHeaders(headers)
         .queryParams(queryParams)

@@ -24,11 +24,14 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorD
 import com.epam.digital.data.platform.starter.errorhandling.exception.ConstraintViolationException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ForbiddenOperationException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.SystemException;
+import com.epam.digital.data.platform.starter.errorhandling.exception.UnauthorizedException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import feign.codec.ErrorDecoder;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpStatus;
@@ -65,21 +68,16 @@ public class DataFactoryErrorDecoder implements ErrorDecoder {
     if (response.status() == HttpStatus.CONFLICT.value()) {
       return constraintViolationException(response);
     }
-    else {
+    if (response.status() == HttpStatus.UNAUTHORIZED.value()) {
+      return unauthorizedException(response);
+    } else {
       return systemException(response);
     }
   }
 
   @SneakyThrows
   private SystemException systemException(Response response) {
-    var systemErrorDto = objectMapper
-        .readValue(response.body().asInputStream(), SystemErrorDto.class);
-
-    var dataFactoryError = DataFactoryError.fromNameOrDefaultRuntimeError(systemErrorDto.getCode());
-    var localizedMessage = messageResolver.getMessage(dataFactoryError.getTitleKey());
-
-    systemErrorDto.setLocalizedMessage(localizedMessage);
-    return new SystemException(systemErrorDto);
+    return new SystemException(convertResponseToSystemErrorDto(response));
   }
 
   @SneakyThrows
@@ -134,5 +132,30 @@ public class DataFactoryErrorDecoder implements ErrorDecoder {
     }
 
     return new ValidationException(validationErrorDto);
+  }
+
+  @SneakyThrows
+  private UnauthorizedException unauthorizedException(Response response) {
+    return new UnauthorizedException(convertResponseToSystemErrorDto(response));
+  }
+
+  private SystemErrorDto convertResponseToSystemErrorDto(Response response) throws IOException {
+    var bodyBytes = response.body().asInputStream().readAllBytes();
+    try {
+      SystemErrorDto systemErrorDto = objectMapper.readValue(bodyBytes, SystemErrorDto.class);
+      var dataFactoryError = DataFactoryError.fromNameOrDefaultRuntimeError(systemErrorDto.getCode());
+      var localizedMessage = messageResolver.getMessage(dataFactoryError.getTitleKey());
+      systemErrorDto.setLocalizedMessage(localizedMessage);
+      return systemErrorDto;
+    } catch (IOException ex) {
+      return convertResponseWithStringBody(bodyBytes, HttpStatus.resolve(response.status()).name());
+    }
+  }
+
+  private SystemErrorDto convertResponseWithStringBody(byte[] bodyBytes, String statusName) {
+    return SystemErrorDto.builder()
+        .code(statusName)
+        .localizedMessage(new String(bodyBytes, StandardCharsets.UTF_8))
+        .build();
   }
 }

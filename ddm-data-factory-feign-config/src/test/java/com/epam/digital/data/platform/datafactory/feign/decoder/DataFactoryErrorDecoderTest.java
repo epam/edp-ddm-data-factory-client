@@ -21,6 +21,7 @@ import com.epam.digital.data.platform.starter.errorhandling.dto.ErrorsListDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.SystemErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.dto.ValidationErrorDto;
 import com.epam.digital.data.platform.starter.errorhandling.exception.SystemException;
+import com.epam.digital.data.platform.starter.errorhandling.exception.UnauthorizedException;
 import com.epam.digital.data.platform.starter.errorhandling.exception.ValidationException;
 import com.epam.digital.data.platform.starter.localization.MessageResolver;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,6 +30,7 @@ import feign.Request;
 import feign.RequestTemplate;
 import feign.Response;
 import feign.codec.ErrorDecoder;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -140,6 +142,32 @@ class DataFactoryErrorDecoderTest {
     assertThat(actualException.getLocalizedMessage()).isEqualTo(LOCALIZED_MESSAGE);
     assertThat(((SystemException)actualException).getCode()).isEqualTo(CONSTRAINT_VIOLATION.name());
     }
+
+  @Test
+  void expectUnauthorizedExceptionFromResponseWithStringBody() throws JsonProcessingException {
+    var responseBodyStr = "Jwt is expired";
+    var response = mockResponse(HttpStatus.UNAUTHORIZED,
+        responseBodyStr.getBytes(StandardCharsets.UTF_8));
+
+    var actualException = errorDecoder.decode("key", response);
+    assertThat(actualException).isInstanceOf(UnauthorizedException.class);
+    assertThat((actualException).getLocalizedMessage()).isEqualTo(
+        "Jwt is expired");
+    assertThat(((UnauthorizedException) actualException).getCode()).isEqualTo(
+        HttpStatus.UNAUTHORIZED.name());
+  }
+
+  @Test
+  void expectUnauthorizedExceptionFromResponseWithJsonBody() throws JsonProcessingException {
+    var responseBodyStr = objectMapper
+        .writeValueAsBytes(SystemErrorDto.builder().code(HttpStatus.UNAUTHORIZED.name()).build());
+    var response = mockResponse(HttpStatus.UNAUTHORIZED, responseBodyStr);
+
+    var actualException = errorDecoder.decode("key", response);
+    assertThat(actualException).isInstanceOf(SystemException.class);
+    assertThat(((UnauthorizedException) actualException).getCode()).isEqualTo(
+        HttpStatus.UNAUTHORIZED.name());
+  }
 
   private Response mockResponse(HttpStatus status, byte[] body) {
     return Response.builder()
